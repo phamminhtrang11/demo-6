@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo.demo;
 
 public class RequestStudent {
     private String className;
