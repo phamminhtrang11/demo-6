@@ -7,12 +7,16 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 
 @RestController
 public class StudentController {
     private List<Student> students = new ArrayList<>();
     @Autowired
     public StudentRepo TheRepo;
+    private Logger logger = Logger.getLogger(StudentController.class.getName());
 
     public StudentController() {
         students.add(new Student("Pham A", "5", 16, 5, "10", "10B"));
@@ -21,7 +25,7 @@ public class StudentController {
         students.add(new Student("Ngoc D", "8", 16, 8, "11", "11B"));
     }
 
-//    @PostMapping(value = "/students")
+//   @PostMapping(value = "/students")
 //    public MyAn getStudentsByClass(@RequestBody RequestStudent requestStudent) {
 //        String className = requestStudent.getClassName();
 //        MyAn ma = new MyAn();
@@ -57,53 +61,74 @@ public class StudentController {
 //        ma.setLstStudent(studentsByClass);
 //        return ma;
 //    }
-    @GetMapping("/students_test")
-    public ResponseEntity<List<Student>> getStudent(){
+@GetMapping("/students_test")
+public ResponseEntity<List<Student>> getStudent(){
+    try {
         List<Student> res = (List<Student>) TheRepo.findAll();
-        return new ResponseEntity<>(res,HttpStatus.OK);
+        logger.log(Level.INFO, "Get students: {0}", res);
+        return new ResponseEntity<>(res, HttpStatus.OK);
+    } catch (Exception e) {
+        logger.log(Level.SEVERE, "Error getting students", e);
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
     }
     @GetMapping(value = "/students_with_class")
     public ResponseEntity<List<Student>> getStudent(@RequestBody RequestStudent param){
-        System.out.println(param.getClassName());
-        List<Student> list = (List<Student>) TheRepo.findAll();
-        List<Student> res = new ArrayList<Student>();
-        for (Student s: list){
-            if (s.getClassName().equals(param.getClassName())){
-                System.out.println(s);
-                res.add(s);
+        try {
+            logger.log(Level.INFO, "Get students with class: {0}", param.getClassName());
+            List<Student> list = (List<Student>) TheRepo.findAll();
+            List<Student> res = new ArrayList<Student>();
+            for (Student s: list){
+                if (s.getClassName().equals(param.getClassName())){
+                    logger.log(Level.INFO, "Found student: {0}", s);
+                    res.add(s);
+                }
             }
+            return new ResponseEntity<>(res, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error getting students by class", e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<>(res,HttpStatus.OK);
     }
 
-        @PostMapping(value="/students_test")
-        public ResponseEntity<List<Student>> addStudent(@RequestBody Student param){
 
+    @PostMapping(value="/students_test")
+    public ResponseEntity<List<Student>> addStudent(@RequestBody Student param){
+        try {
+            logger.log(Level.INFO, "Add student: {0}", param);
             TheRepo.save(param);
             List<Student> list = (List<Student>) TheRepo.findAll();
             List<Student> res = new ArrayList<Student>();
             for (Student s: list){
                 if (s.getClassName().equals(param.getClassName())){
-                    System.out.println(s);
+                    logger.log(Level.INFO, "Found student: {0}", s);
                     res.add(s);
                 }
             }
-            return new ResponseEntity<>(res,HttpStatus.OK);
-
+            return new ResponseEntity<>(res, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error adding student", e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PutMapping(value="/students_test")
     public ResponseEntity<List<Student>> editStudent(@RequestBody Student param){
-        List<Student> list = (List<Student>)
-                TheRepo.findAll();
-        for (Student s : list){
-            if (param.getId()==s.getId()){
-                TheRepo.delete(s);
-                TheRepo.save(param);
-                return new ResponseEntity<>((List<Student>)TheRepo.findAll(),HttpStatus.OK);
+        try {
+            List<Student> list = (List<Student>) TheRepo.findAll();
+            for (Student s : list){
+                if (param.getId()==s.getId()){
+                    TheRepo.delete(s);
+                    TheRepo.save(param);
+                    logger.log(Level.INFO, "Edited student: {0}", param);
+                    return new ResponseEntity<>((List<Student>)TheRepo.findAll(), HttpStatus.OK);
+                }
             }
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error editing student", e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<>(null);
     }
 //    @DeleteMapping(value="/students_test")
 //    public ResponseEntity<String> delete(@RequestBody Student param){
@@ -114,15 +139,19 @@ public class StudentController {
 
     @DeleteMapping(value="/students_test")
     public ResponseEntity<String> delete(@RequestBody Student param){
-        List<Student> list = (List<Student>)
-                TheRepo.findAll();
-        for (Student s : list){
-            if (param.getId()==s.getId()){
-                TheRepo.delete(s);
-                //TheRepo.save(param);
-                return new ResponseEntity<>("Deleted student "+s.getId() ,HttpStatus.OK);
+        try {
+            List<Student> list = (List<Student>) TheRepo.findAll();
+            for (Student s : list){
+                if (param.getId()==s.getId()){
+                    TheRepo.delete(s);
+                    logger.log(Level.INFO, "Deleted student: {0}", s.getId());
+                    return new ResponseEntity<>("Deleted student " + s.getId(), HttpStatus.OK);
+                }
             }
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error deleting student", e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<>(null);
     }
 }
